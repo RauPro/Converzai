@@ -96,3 +96,80 @@ The system adopts a hybrid **Service-Oriented Architecture (SOA)**. It is not a 
     *   **Admins:** Global Read/Write.
     *   **Managers:** Scoped Read/Write (Own Tenant only).
     *   **Public (Unauthenticated):** Access restricted to Marketing and Login pages.
+# 6. Architecture
+
+```mermaid
+graph TD
+    %% --- STYLING ---
+    classDef person fill:#f9f,stroke:#333,stroke-width:2px,color:black;
+    classDef frontend fill:#ffdec2,stroke:#d67e2c,stroke-width:2px,color:black;
+    classDef backend fill:#c2e0ff,stroke:#2c5bb5,stroke-width:2px,color:black;
+    classDef db fill:#c2e0ff,stroke:#2c5bb5,stroke-width:2px,shape:cylinder,color:black;
+    classDef external fill:#d4edda,stroke:#28a745,stroke-width:2px,stroke-dasharray: 5 5,color:black;
+    classDef legend fill:#fff,stroke:#333,stroke-width:1px,color:black;
+
+    %% --- LEGEND ---
+    subgraph Legend
+        L_User((User)):::person
+        L_Front("User-Facing Frontend"):::frontend
+        L_Back("Internal Backend"):::backend
+        L_Ext("External Service"):::external
+        L_Line1[Solid: Synchronous HTTPS] --- L_Line2[Dotted: Asynchronous / Background]
+    end
+
+    %% --- USERS ---
+    Manager((Manager)):::person
+    Admin((System Admin)):::person
+    Agent(("Agent / Caller")):::person
+
+    %% --- EXTERNAL SYSTEMS (PUBLIC INTERNET) ---
+    Twilio["Twilio<br/>(Telephony & STT)"]:::external
+    OpenAI["OpenAI<br/>(GPT-4o API)"]:::external
+
+    %% --- CONVERZA CLOUD INFRASTRUCTURE ---
+    subgraph Converza_Cloud ["Converza Cloud Environment"]
+        style Converza_Cloud fill:#f4f4f4,stroke:#666,stroke-dasharray: 5 5
+
+        %% Frontend Layer (Publicly Accessible via URL)
+        subgraph Public_Zone ["Public Availability Zone"]
+            style Public_Zone fill:#fff,stroke:#d67e2c
+            NextApp["<b>Dashboard & Onboarding</b><br/>Next.js / React"]:::frontend
+        end
+
+        %% Backend Layer (Internal / Protected)
+        subgraph Private_Zone ["Private Availability Zone"]
+            style Private_Zone fill:#fff,stroke:#2c5bb5
+            
+            FastAPI["<b>Core Logic Service</b><br/>Python FastAPI<br/><i>Async Worker</i>"]:::backend
+            
+            subgraph BaaS ["Supabase (BaaS)"]
+                SupabaseAuth["<b>Auth Service</b><br/>JWT Handling"]:::backend
+                SupabaseDB[("<b>PostgreSQL DB</b><br/>RLS Policies")]:::db
+            end
+        end
+    end
+
+    %% --- INTERACTIONS & DATA FLOW ---
+
+    %% 1. Telephony Flow (The Trigger)
+    Agent -.->|Phone Call Audio| Twilio
+    Twilio --"Webhook (POST)<br/>[Auth: X-Twilio-Signature]"--> FastAPI
+
+    %% 2. Manager Interaction
+    Manager == "HTTPS / Browser<br/>[AuthN: Login]" ==> NextApp
+    NextApp -- "Auth Request" --> SupabaseAuth
+    SupabaseAuth -- "JWT Token" --> NextApp
+    NextApp == "REST API (Fetch KPIs)<br/>[AuthZ: JWT + RLS]" ==> SupabaseDB
+
+    %% 3. Admin Interaction
+    Admin == "HTTPS / Browser<br/>[AuthZ: Global Access]" ==> NextApp
+
+    %% 4. The Intelligence Pipeline (Internal/Async)
+    FastAPI -- "Fetch Transcript (Sync)" --> Twilio
+    FastAPI -- "Analyze Text (Sync)" --> OpenAI
+    OpenAI -- "JSON Insights" --> FastAPI
+    FastAPI -- "Write Insights (Sync)<br/>[AuthZ: Service Key]" --> SupabaseDB
+
+    %% Link Legend to graph to keep it tidy (Hidden link)
+    Legend ~~~ Manager
+```
