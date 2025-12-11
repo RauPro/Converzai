@@ -175,7 +175,7 @@ graph TD
 ```
 ## 7. User Flows
 * Manager Authentication: A manager logs in to access their secure environment.
-* Frictionless Onboarding (Twilio Provisioning): A manager selects and provisions a phone number to begin the pilot immediately, validating our "Magic Moment" strategy.
+* Frictionless Onboarding (Twilio Provisioning): A manager selects and provisions a phone number to begin the pilot immediately.
 * Agent Call Handling (Passive): An agent accepts a call on the provisioned line; the system passively records it.
 * Call Completion & Webhook Trigger: Twilio detects the call end and notifies our system to begin ingestion.
 * AI Insight Generation: The system processes the raw transcript to extract ROI metrics (Upsell $, Sentiment) using GPT-4o.
@@ -183,11 +183,12 @@ graph TD
 * Coaching Drill-Down: The manager selects a specific low-performing call to review the recording and transcript.
 * Admin Usage Monitoring: Internal admins track API costs (OpenAI/Twilio) to ensure we maintain our 80% Gross Margin target.
 
+### AI Insight Generation
 ```mermaid
 sequenceDiagram
     autonumber
     participant Twilio as Twilio (Telephony)
-    participant FastAPI as Python Logic Service
+    participant FastAPI
     participant OpenAI as OpenAI (GPT-4o)
     participant DB as Supabase DB
 
@@ -210,6 +211,7 @@ sequenceDiagram
     end
 ```
 
+### Frictionless Onboarding
 ```mermaid
 sequenceDiagram
     autonumber
@@ -233,7 +235,7 @@ sequenceDiagram
     Portal-->>Manager: Display New Number (Ready for Calls)
 ```
 
-
+### Dashboard KPI Retrieval
 ```mermaid
 sequenceDiagram
     autonumber
@@ -253,6 +255,9 @@ sequenceDiagram
     
     Dash-->>Manager: Render ROI Charts & Graphs
 ```
+
+
+### Coaching Drill-Down
 ```mermaid
 sequenceDiagram
     autonumber
