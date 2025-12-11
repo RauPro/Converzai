@@ -96,7 +96,7 @@ The system adopts a hybrid **Service-Oriented Architecture (SOA)**. It is not a 
     *   **Admins:** Global Read/Write.
     *   **Managers:** Scoped Read/Write (Own Tenant only).
     *   **Public (Unauthenticated):** Access restricted to Marketing and Login pages.
-# 6. Architecture
+## 6. Architecture
 
 ```mermaid
 graph TD
@@ -172,4 +172,104 @@ graph TD
 
     %% Link Legend to graph to keep it tidy (Hidden link)
     Legend ~~~ Manager
+```
+## 7. User Flows
+* Manager Authentication: A manager logs in to access their secure environment.
+* Frictionless Onboarding (Twilio Provisioning): A manager selects and provisions a phone number to begin the pilot immediately, validating our "Magic Moment" strategy.
+* Agent Call Handling (Passive): An agent accepts a call on the provisioned line; the system passively records it.
+* Call Completion & Webhook Trigger: Twilio detects the call end and notifies our system to begin ingestion.
+* AI Insight Generation: The system processes the raw transcript to extract ROI metrics (Upsell $, Sentiment) using GPT-4o.
+* Dashboard KPI Retrieval: The manager loads the dashboard to view aggregated performance metrics (Conversion Rate, Revenue).
+* Coaching Drill-Down: The manager selects a specific low-performing call to review the recording and transcript.
+* Admin Usage Monitoring: Internal admins track API costs (OpenAI/Twilio) to ensure we maintain our 80% Gross Margin target.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Twilio as Twilio (Telephony)
+    participant FastAPI as Python Logic Service
+    participant OpenAI as OpenAI (GPT-4o)
+    participant DB as Supabase DB
+
+    Note over Twilio, DB: Asynchronous Process Triggered by Call End
+    Twilio->>FastAPI: POST /webhook/call-complete (RecordingUrl)
+    FastAPI->>FastAPI: Validate X-Twilio-Signature
+    FastAPI-->>Twilio: 200 OK (Ack)
+    
+    rect rgb(240, 248, 255)
+        Note right of FastAPI: Background Worker Starts
+        FastAPI->>Twilio: GET /transcripts/{CallSid}
+        Twilio-->>FastAPI: Return Raw Transcript
+        
+        FastAPI->>OpenAI: POST /v1/chat/completions (Prompt + Transcript)
+        Note right of OpenAI: Analyzes Sentiment, Upsell $, Conversion
+        OpenAI-->>FastAPI: Return JSON Insights
+        
+        FastAPI->>DB: INSERT into 'Insights' table
+        DB-->>FastAPI: Confirm Write
+    end
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager
+    participant Portal as Onboarding Portal
+    participant API as Converza API
+    participant Twilio as Twilio API
+    participant DB as Supabase DB
+
+    Manager->>Portal: Selects Local Area Code
+    Portal->>API: POST /provision-number
+    API->>Twilio: POST /incoming-phone-numbers (Buy)
+    Twilio-->>API: Return New Phone Number
+    
+    API->>Twilio: POST /configure-webhook (Set Webhook URL)
+    Twilio-->>API: Confirmation
+    
+    API->>DB: UPDATE Tenant (Link New Number)
+    DB-->>API: Success
+    API-->>Portal: Provisioning Complete
+    Portal-->>Manager: Display New Number (Ready for Calls)
+```
+
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager
+    participant Dash as Next.js Dashboard
+    participant Auth as Supabase Auth
+    participant DB as Supabase DB
+
+    Manager->>Dash: Access "Performance Dashboard"
+    Dash->>Auth: Get Current User Session (JWT)
+    Auth-->>Dash: Valid Token
+    
+    Note over Dash, DB: Direct BaaS Interaction via RLS
+    Dash->>DB: SELECT avg(conversion_rate), sum(upsell_rev) FROM Insights
+    
+    DB-->>Dash: Return Aggregated KPIs
+    
+    Dash-->>Manager: Render ROI Charts & Graphs
+```
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager
+    participant Dash as Next.js Dashboard
+    participant DB as Supabase DB
+    participant Twilio as Twilio Assets
+
+    Manager->>Dash: Click on "Low Performing Call"
+    
+    par Fetch Metadata
+        Dash->>DB: SELECT transcript, sentiment, ai_score FROM Calls WHERE id=X
+        DB-->>Dash: Return Insight Data
+    and Fetch Audio
+        Dash->>Twilio: GET /recordings/{CallSid}.mp3
+        Twilio-->>Dash: Stream Audio File
+    end
+    
+    Dash-->>Manager: Display Player + Synchronized Transcript
 ```
