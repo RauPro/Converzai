@@ -370,3 +370,64 @@ graph TD
 * WebSocket Layer for Real-Time Streaming.
 
 ### Phase 4: TBD
+
+
+## 8. Data Schema
+```mermaid
+graph TD
+    %% --- STYLING ---
+    classDef table fill:#fff,stroke:#333,stroke-width:1px,color:black,align:left;
+    classDef boundary fill:#f9f9f9,stroke:#666,stroke-dasharray: 5 5,color:#555;
+    classDef label fill:#fff,stroke:#fff,color:#333;
+
+    %% --- LEGEND ---
+    subgraph Legend
+        L1(1-to-1) --- L2(1-to-n) --> L3(n-to-n) <--> L4
+    end
+
+    %% --- DATABASE BOUNDARY: SUPABASE POSTGRESQL ---
+    subgraph Supabase_PG [" Boundary: Supabase (PostgreSQL) "]
+        style Supabase_PG fill:#e6f3ff,stroke:#2c5bb5,stroke-dasharray: 5 5
+
+        %% ENTITY: TENANTS
+        Tenant["<b>TENANTS</b> (Organization)<hr/>PK: id<br/>name<br/>twilio_phone_number (Provisioned)<br/>created_at"]:::table
+
+        %% ENTITY: USERS
+        User["<b>USERS</b> (Managers)<hr/>PK: id<br/>FK: tenant_id<br/>auth_id (Link to Auth)<br/>role ('admin', 'manager')<br/>email"]:::table
+
+        %% ENTITY: AGENTS
+        Agent["<b>AGENTS</b> (Employees)<hr/>PK: id<br/>FK: tenant_id<br/>name<br/>employee_id"]:::table
+
+        %% ENTITY: CALLS
+        Call["<b>CALLS</b> (Metadata)<hr/>PK: id<br/>FK: agent_id<br/>twilio_sid<br/>duration_seconds<br/>recording_url (Link to Twilio)<br/>timestamp"]:::table
+
+        %% ENTITY: INSIGHTS
+        Insight["<b>INSIGHTS</b> (AI Output)<hr/>PK: id<br/>FK: call_id<br/>sentiment_score (Pos/Neu/Neg)<br/>upsell_amount ($)<br/>conversion_boolean (T/F)<br/>script_adherence_score"]:::table
+    end
+
+    %% --- DATABASE BOUNDARY: SUPABASE AUTH ---
+    subgraph Supabase_Auth [" Boundary: Supabase Auth (GoTrue) "]
+        style Supabase_Auth fill:#fff0f0,stroke:#cc0000,stroke-dasharray: 5 5
+        AuthUser["<b>AUTH_IDENTITIES</b><hr/>PK: uid<br/>email<br/>encrypted_password<br/>last_login"]:::table
+    end
+
+    %% --- RELATIONSHIPS ---
+
+    %% Tenant 1-to-n Users
+    Tenant -- "Has Employees (1:n)" --> User
+
+    %% Tenant 1-to-n Agents
+    Tenant -- "Manages (1:n)" --> Agent
+
+    %% Agent 1-to-n Calls
+    Agent -- "Performs (1:n)" --> Call
+
+    %% Call 1-to-1 Insight (Fixed Syntax: -- "Label" ---)
+    Call -- "Analyzed As (1:1)" --- Insight
+
+    %% Auth Link 1-to-1 (Fixed Syntax: -- "Label" ---)
+    AuthUser -- "Identifies (1:1)" --- User
+
+    %% Positioning
+    Legend ~~~ Supabase_PG
+```
