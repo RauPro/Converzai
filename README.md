@@ -431,3 +431,44 @@ graph TD
     %% Positioning
     Legend ~~~ Supabase_PG
 ```
+## Team
+### **1. Phase 1: The MVP
+* **Total Headcount:** 2 Developers, 1 QA
+
+#### **Roles & Responsibilities**
+| Role | Count | Primary Responsibility |
+| :--- | :--- | :--- |
+| **Lead Backend / AI Engineer** | 1 | Responsible for the prompt engineering (OpenAI), the FastAPI logic, and the Twilio webhook handlers.|
+| **Full-Stack / Frontend Lead** | 1 | Builds the Next.js dashboard also handle the Supabase Auth integration.|
+| **QA** | 1 | Helping testing and writing the initial tests.|
+
+* **Unified Context:** Everyone knows how the data flows from Twilio to the Dashboard.
+* **No Handoffs:** The backend engineer talks directly to the frontend engineer.
+---
+
+### **2. Phase I: Pilot Release**
+**Objective:** Reliability & Margin Protection.
+**Idea:** Specialization begins. Once real customers (and real money) are involved, we cannot afford for the "Insight Engine" to crash because someone pushed a bad UI update.
+
+* **Total Headcount:** 4 - 5 Developers (+1 DevOps/Platform focus).
+* **Structure:** Two Specialized Squads.
+
+#### **Squad A: The Product Squad (Frontend & User Value)**
+* **Focus:** The Manager Experience.
+* **Size:** 2 Developers.
+* **Responsibilities:**
+    * **Dashboard Features**
+    * **Admin Tools:**
+* **Key Signal:** They listen to user feedback from the Pilot.
+
+#### **Squad B: The Platform & AI Squad (Backend & Infrastructure)**
+* **Focus:** The Engine, Cost, and Uptime.
+* **Size:** 2-3 Developers.
+* **Responsibilities:**
+    * **Resiliency Layer:** Ensure no call data is lost if OpenAI hangs.
+    * **Margin Guard:** Be sure we are getting enough gross margin.
+    * **AI Tuning:** Tweaking the GPT-4o prompts to improve accuracy without increasing token costs.
+
+**Main reasons of this structure**
+* **Risk Mitigation:** We separate "UI Bugs" from "Data Loss Bugs."
+* **Financial Discipline:** We need dedicated eyes on the OpenAI bill. In the MVP phase, If this would be a real startup idea, then cost doesn't matter as much as speed.
